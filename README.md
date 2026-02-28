@@ -22,11 +22,13 @@ rg -n '^\s*class\s+.*(Axiom|Axioms|Assumption|Assumptions)' StringAlgebra/MTC --
 rg -n '^\s*axiom\s|\badmit\b|Classical\.choose|Classical\.epsilon|^\s*unsafe\s' StringAlgebra/MTC --glob '*.lean'
 ```
 
-## Status (2026-02-26)
+## Status (2026-02-28)
 
-1. Theorem-level `sorry` count: `16` (theorem-level proof debt only)
-2. No assumption-bundle wrapper classes.
-3. No hidden-choice smuggling patterns.
+1. Build status: `lake build StringAlgebra.MTC` passes.
+2. Theorem-level `sorry` count: `2` (both in `StringAlgebra/MTC/FusionPF.lean`).
+3. No assumption-bundle wrapper classes.
+4. No hidden-choice smuggling patterns (`axiom` / `admit` / `unsafe` / `postulate` scan clean).
+5. Umbrella import is wrapper-minimized: `StringAlgebra/MTC.lean` does not import `DevelopmentHarness` (harness remains opt-in).
 
 ## Related Repositories
 

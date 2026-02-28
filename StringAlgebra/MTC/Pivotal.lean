@@ -102,6 +102,50 @@ variable [PivotalCategory C]
 /-- Shorthand for the pivotal isomorphism -/
 abbrev j (X : C) : X ≅ (Xᘁ)ᘁ := pivotalIso X
 
+/-- The double right-adjoint mate of the pivotal inverse identifies with the
+inverse pivotal isomorphism on the double right dual. -/
+theorem doubleRightAdjointMate_pivotalInv (X : C) :
+    rightAdjointMate (rightAdjointMate ((pivotalIso X).inv)) =
+      (pivotalIso ((Xᘁ)ᘁ : C)).inv := by
+  let jX : X ≅ ((Xᘁ)ᘁ : C) := pivotalIso X
+  let jDD : ((Xᘁ)ᘁ : C) ≅ ((((Xᘁ)ᘁ)ᘁ)ᘁ : C) := pivotalIso ((Xᘁ)ᘁ : C)
+  have hnat := (pivotalIso_naturality (C := C) (f := jX.inv))
+  have hcomp :
+      jDD.hom ≫ rightAdjointMate (rightAdjointMate jX.inv) =
+        𝟙 ((Xᘁ)ᘁ : C) := by
+    simpa [jX, jDD, jX.inv_hom_id, Category.id_comp] using hnat.symm
+  have hcomp' :
+      jDD.hom ≫ rightAdjointMate (rightAdjointMate jX.inv) =
+        jDD.hom ≫ jDD.inv := by
+    calc
+      jDD.hom ≫ rightAdjointMate (rightAdjointMate jX.inv) = 𝟙 ((Xᘁ)ᘁ : C) := hcomp
+      _ = jDD.hom ≫ jDD.inv := by simp [jDD.hom_inv_id]
+  have hcancel := (cancel_epi jDD.hom).1 hcomp'
+  simpa [jDD] using hcancel
+
+/-- The double right-adjoint mate of the pivotal hom identifies with the
+pivotal hom on the double right dual. -/
+theorem doubleRightAdjointMate_pivotalHom (X : C) :
+    rightAdjointMate (rightAdjointMate ((pivotalIso X).hom)) =
+      (pivotalIso ((Xᘁ)ᘁ : C)).hom := by
+  let jX : X ≅ ((Xᘁ)ᘁ : C) := pivotalIso X
+  let jDD : ((Xᘁ)ᘁ : C) ≅ ((((Xᘁ)ᘁ)ᘁ)ᘁ : C) := pivotalIso ((Xᘁ)ᘁ : C)
+  have hnat := (pivotalIso_naturality (C := C) (f := jX.hom))
+  have hcomp :
+      jX.hom ≫ jDD.hom =
+        jX.hom ≫ rightAdjointMate (rightAdjointMate jX.hom) := by
+    simpa [jX, jDD] using hnat
+  have hcancel := (cancel_epi jX.hom).1 hcomp
+  simpa [jDD] using hcancel.symm
+
+/-- Naturality specialized to the right-adjoint mate of the pivotal inverse.
+This is the core compatibility equation underlying the dual-compatibility
+normalization attempts for pivotal traces. -/
+theorem pivotalIso_invMate_naturality (X : C) :
+    (pivotalIso X).invᘁ ≫ (pivotalIso (((Xᘁ)ᘁ)ᘁ : C)).hom =
+      (pivotalIso (Xᘁ : C)).hom ≫ (pivotalIso X).invᘁᘁᘁ := by
+  simpa using (pivotalIso_naturality (C := C) (f := (pivotalIso X).invᘁ))
+
 /-- In a pivotal category, the left and right duals of any object are
     canonically isomorphic.
 

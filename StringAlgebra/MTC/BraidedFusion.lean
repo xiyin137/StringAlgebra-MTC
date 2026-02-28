@@ -55,6 +55,22 @@ namespace BraidedFusionCategory
 def monodromy (X Y : C) : X ⊗ Y ⟶ X ⊗ Y :=
   (β_ X Y).hom ≫ (β_ Y X).hom
 
+omit [Preadditive C] [MonoidalPreadditive C] [HasFiniteBiproducts C] [RigidCategory C] in
+/-- Monodromy on swapped factors is conjugate by the braiding. -/
+theorem monodromy_swap_eq_conj (X Y : C) :
+    monodromy (C := C) Y X =
+      (β_ X Y).inv ≫ monodromy (C := C) X Y ≫ (β_ X Y).hom := by
+  unfold monodromy
+  simp [Category.assoc]
+
+omit [Preadditive C] [MonoidalPreadditive C] [HasFiniteBiproducts C] [RigidCategory C] in
+/-- Equivalent conjugation form of `monodromy_swap_eq_conj`. -/
+theorem monodromy_eq_conj_swap (X Y : C) :
+    monodromy (C := C) X Y =
+      (β_ X Y).hom ≫ monodromy (C := C) Y X ≫ (β_ X Y).inv := by
+  unfold monodromy
+  simp [Category.assoc]
+
 /-- An object X is transparent (or centralizes the category) if its
     monodromy with every object Y is trivial.
 
