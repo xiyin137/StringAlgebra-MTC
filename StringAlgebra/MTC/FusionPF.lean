@@ -34,28 +34,20 @@ namespace FusionCategory
 theorem fpDimCandidate_pos
     (i : Idx (k := ℂ) (C := C)) :
     0 < fpDimCandidate (C := C) i := by
-  have hPos :
-      0 < fpDimCandidate (C := C) i := by
-    -- Remaining PF-positivity debt:
-    -- extract strict positivity from the Perron-Frobenius eigenvector package
-    -- for the nonnegative fusion operator attached to `i`.
-    sorry
-  exact hPos
+  -- Remaining PF-positivity debt:
+  -- extract strict positivity from the Perron-Frobenius eigenvector package
+  -- for the nonnegative fusion operator attached to `i`.
+  sorry
 
 theorem fpDimCandidate_fusion
     (i j : Idx (k := ℂ) (C := C)) :
     fpDimCandidate (C := C) i * fpDimCandidate (C := C) j =
       ∑ m : Idx (k := ℂ) (C := C),
         (fusionCoeff (k := ℂ) i j m : ℝ≥0∞) * fpDimCandidate (C := C) m := by
-  have hFusion :
-      fpDimCandidate (C := C) i * fpDimCandidate (C := C) j =
-        ∑ m : Idx (k := ℂ) (C := C),
-          (fusionCoeff (k := ℂ) i j m : ℝ≥0∞) * fpDimCandidate (C := C) m := by
-    -- Remaining PF-fusion debt:
-    -- identify `fpDimCandidate` as a common positive eigencharacter and use
-    -- the fusion-matrix action to derive the multiplicative/fusion relation.
-    sorry
-  exact hFusion
+  -- Remaining PF-fusion debt:
+  -- identify `fpDimCandidate` as a common positive eigencharacter and use
+  -- the fusion-matrix action to derive the multiplicative/fusion relation.
+  sorry
 
 theorem fpDimCandidateByFin_pos
     (i : Fin (rank (k := ℂ) (C := C))) :

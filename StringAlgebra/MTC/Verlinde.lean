@@ -54,23 +54,162 @@ namespace Verlinde
 
     Here m* = dualIdx m is the charge conjugate of m. -/
 theorem verlinde_formula
-    (i j m : FusionCategory.Idx (k := k) (C := C)) :
+    (i j m : FusionCategory.Idx (k := k) (C := C))
+    (hDiag :
+      ∀ a b c : FusionCategory.Idx (k := k) (C := C),
+        ∑ x : FusionCategory.Idx (k := k) (C := C),
+          SMatrix.sMatrix (C := C) b x *
+            (FusionCategory.fusionCoeff (k := k) a c x : k) =
+        (SMatrix.sMatrix (C := C) a b /
+          SMatrix.sMatrix (C := C) FusionCategory.unitIdx b) *
+          SMatrix.sMatrix (C := C) b c)
+    (hOrth :
+      ∀ a b : FusionCategory.Idx (k := k) (C := C),
+        ∑ x : FusionCategory.Idx (k := k) (C := C),
+          SMatrix.sMatrix (C := C) a x *
+            SMatrix.sMatrix (C := C) (FusionCategory.dualIdx x) b =
+        if a = b then (1 : k) else 0)
+    (hDual :
+      ∀ a b : FusionCategory.Idx (k := k) (C := C),
+        SMatrix.sMatrix (C := C) a b =
+          SMatrix.sMatrix (C := C) (FusionCategory.dualIdx a) (FusionCategory.dualIdx b))
+    (hDualInvol :
+      ∀ a : FusionCategory.Idx (k := k) (C := C),
+        FusionCategory.dualIdx (FusionCategory.dualIdx a) = a) :
     (FusionCategory.fusionCoeff (k := k) i j m : k) =
     ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
       SMatrix.sMatrix (C := C) i ℓ * SMatrix.sMatrix (C := C) j ℓ *
       SMatrix.sMatrix (C := C) (FusionCategory.dualIdx m) ℓ /
       SMatrix.sMatrix (C := C) FusionCategory.unitIdx ℓ := by
-  have hVerlindeExpansion :
-      (FusionCategory.fusionCoeff (k := k) i j m : k) =
-      ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
-        SMatrix.sMatrix (C := C) i ℓ * SMatrix.sMatrix (C := C) j ℓ *
-        SMatrix.sMatrix (C := C) (FusionCategory.dualIdx m) ℓ /
-        SMatrix.sMatrix (C := C) FusionCategory.unitIdx ℓ := by
-    -- Remaining Verlinde debt:
-    -- combine S-matrix orthogonality, modular inversion, and nonvanishing
-    -- vacuum-column denominators to rewrite fusion coefficients explicitly.
-    sorry
-  exact hVerlindeExpansion
+  let S : FusionCategory.Idx (k := k) (C := C) →
+      FusionCategory.Idx (k := k) (C := C) → k :=
+    SMatrix.sMatrix (C := C)
+  have hInjectiveDual :
+      Function.Injective (FusionCategory.dualIdx (k := k) (C := C)) := by
+    intro a b hab
+    have h' := congrArg (FusionCategory.dualIdx (k := k) (C := C)) hab
+    simpa [hDualInvol] using h'
+  symm
+  calc
+    ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+        S i ℓ * S j ℓ * S (FusionCategory.dualIdx m) ℓ /
+          S FusionCategory.unitIdx ℓ
+      =
+        ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+          S (FusionCategory.dualIdx m) ℓ *
+            ((S i ℓ / S FusionCategory.unitIdx ℓ) * S ℓ j) := by
+          refine Finset.sum_congr rfl ?_
+          intro ℓ hℓ
+          have hsymℓ : S j ℓ = S ℓ j := by
+            simpa [S] using (SMatrix.sMatrix_symmetric (C := C) j ℓ)
+          simp [hsymℓ, div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm]
+    _ =
+        ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+          S (FusionCategory.dualIdx m) ℓ *
+            ∑ x : FusionCategory.Idx (k := k) (C := C),
+              S ℓ x * (FusionCategory.fusionCoeff (k := k) i j x : k) := by
+          refine Finset.sum_congr rfl ?_
+          intro ℓ hℓ
+          rw [hDiag i ℓ j]
+    _ =
+        ∑ x : FusionCategory.Idx (k := k) (C := C),
+          (FusionCategory.fusionCoeff (k := k) i j x : k) *
+            ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+              S (FusionCategory.dualIdx m) ℓ * S ℓ x := by
+          calc
+            ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                S (FusionCategory.dualIdx m) ℓ *
+                  ∑ x : FusionCategory.Idx (k := k) (C := C),
+                    S ℓ x * (FusionCategory.fusionCoeff (k := k) i j x : k)
+              =
+                ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                  ∑ x : FusionCategory.Idx (k := k) (C := C),
+                    S (FusionCategory.dualIdx m) ℓ *
+                      (S ℓ x * (FusionCategory.fusionCoeff (k := k) i j x : k)) := by
+                    refine Finset.sum_congr rfl ?_
+                    intro ℓ hℓ
+                    rw [Finset.mul_sum]
+            _ =
+                ∑ x : FusionCategory.Idx (k := k) (C := C),
+                  ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                    S (FusionCategory.dualIdx m) ℓ *
+                      (S ℓ x * (FusionCategory.fusionCoeff (k := k) i j x : k)) := by
+                    rw [Finset.sum_comm]
+            _ =
+                ∑ x : FusionCategory.Idx (k := k) (C := C),
+                  (FusionCategory.fusionCoeff (k := k) i j x : k) *
+                    ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                      S (FusionCategory.dualIdx m) ℓ * S ℓ x := by
+                    refine Finset.sum_congr rfl ?_
+                    intro x hx
+                    let Nx : k := (FusionCategory.fusionCoeff (k := k) i j x : k)
+                    calc
+                      ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                          S (FusionCategory.dualIdx m) ℓ * (S ℓ x * Nx)
+                        =
+                          ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                            Nx * (S (FusionCategory.dualIdx m) ℓ * S ℓ x) := by
+                              refine Finset.sum_congr rfl ?_
+                              intro ℓ hℓ
+                              simp [Nx, mul_assoc, mul_comm]
+                      _ = Nx *
+                          ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                            S (FusionCategory.dualIdx m) ℓ * S ℓ x := by
+                            symm
+                            simpa [Nx] using
+                              (Finset.mul_sum
+                                (s := Finset.univ) (a := Nx)
+                                (f := fun ℓ : FusionCategory.Idx (k := k) (C := C) =>
+                                  S (FusionCategory.dualIdx m) ℓ * S ℓ x))
+                      _ =
+                          (FusionCategory.fusionCoeff (k := k) i j x : k) *
+                            ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                              S (FusionCategory.dualIdx m) ℓ * S ℓ x := by
+                            simp [Nx]
+    _ =
+        ∑ x : FusionCategory.Idx (k := k) (C := C),
+          (FusionCategory.fusionCoeff (k := k) i j x : k) *
+            (if m = x then (1 : k) else 0) := by
+          refine Finset.sum_congr rfl ?_
+          intro x hx
+          have hInner :
+              ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                S (FusionCategory.dualIdx m) ℓ * S ℓ x =
+              if m = x then (1 : k) else 0 := by
+            calc
+              ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                  S (FusionCategory.dualIdx m) ℓ * S ℓ x
+                =
+                  ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                    S (FusionCategory.dualIdx m) ℓ *
+                      S (FusionCategory.dualIdx ℓ) (FusionCategory.dualIdx x) := by
+                      refine Finset.sum_congr rfl ?_
+                      intro ℓ hℓ
+                      have hDualS : S ℓ x =
+                          S (FusionCategory.dualIdx ℓ) (FusionCategory.dualIdx x) := by
+                        simpa [S] using hDual ℓ x
+                      simp [hDualS]
+              _ = if FusionCategory.dualIdx m = FusionCategory.dualIdx x then (1 : k) else 0 := by
+                    simpa [S] using
+                      (hOrth (FusionCategory.dualIdx m) (FusionCategory.dualIdx x))
+              _ = if m = x then (1 : k) else 0 := by
+                    by_cases hmx : m = x
+                    · simp [hmx]
+                    · have hdx : FusionCategory.dualIdx m ≠ FusionCategory.dualIdx x := by
+                        intro hdx
+                        exact hmx (hInjectiveDual hdx)
+                      simp [hmx, hdx]
+          simp [hInner]
+    _ = (FusionCategory.fusionCoeff (k := k) i j m : k) := by
+          rw [Finset.sum_eq_single m]
+          · simp
+          · intro x hx hxm
+            have hmx : m ≠ x := by
+              intro h
+              exact hxm h.symm
+            simp [hmx]
+          · intro hm
+            exact (hm (Finset.mem_univ m)).elim
 
 /-- The S-matrix diagonalizes the fusion rules.
 
@@ -81,25 +220,123 @@ theorem verlinde_formula
 
     This is equivalent to the Verlinde formula. -/
 theorem sMatrix_diagonalizes_fusion
-    (i j j' : FusionCategory.Idx (k := k) (C := C)) :
+    (i j j' : FusionCategory.Idx (k := k) (C := C))
+    (hVerlinde :
+      ∀ a b c : FusionCategory.Idx (k := k) (C := C),
+        (FusionCategory.fusionCoeff (k := k) a b c : k) =
+          ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+            SMatrix.sMatrix (C := C) a ℓ * SMatrix.sMatrix (C := C) b ℓ *
+            SMatrix.sMatrix (C := C) (FusionCategory.dualIdx c) ℓ /
+            SMatrix.sMatrix (C := C) FusionCategory.unitIdx ℓ)
+    (hOrth :
+      ∀ a b : FusionCategory.Idx (k := k) (C := C),
+        ∑ m : FusionCategory.Idx (k := k) (C := C),
+          SMatrix.sMatrix (C := C) a m *
+            SMatrix.sMatrix (C := C) (FusionCategory.dualIdx m) b =
+        if a = b then (1 : k) else 0) :
     ∑ m : FusionCategory.Idx (k := k) (C := C),
       SMatrix.sMatrix (C := C) j m *
       (FusionCategory.fusionCoeff (k := k) i j' m : k) =
     (SMatrix.sMatrix (C := C) i j /
      SMatrix.sMatrix (C := C) FusionCategory.unitIdx j) *
     SMatrix.sMatrix (C := C) j j' := by
-  have hDiagonalization :
-      ∑ m : FusionCategory.Idx (k := k) (C := C),
-        SMatrix.sMatrix (C := C) j m *
-        (FusionCategory.fusionCoeff (k := k) i j' m : k) =
-      (SMatrix.sMatrix (C := C) i j /
-       SMatrix.sMatrix (C := C) FusionCategory.unitIdx j) *
-      SMatrix.sMatrix (C := C) j j' := by
-    -- Remaining diagonalization debt:
-    -- substitute Verlinde expansion, exchange finite sums, and evaluate by
-    -- S-matrix orthogonality to isolate the eigenvalue ratio `S_{ij}/S_{0j}`.
-    sorry
-  exact hDiagonalization
+  let S : FusionCategory.Idx (k := k) (C := C) →
+      FusionCategory.Idx (k := k) (C := C) → k :=
+    SMatrix.sMatrix (C := C)
+  calc
+    ∑ m : FusionCategory.Idx (k := k) (C := C),
+        S j m * (FusionCategory.fusionCoeff (k := k) i j' m : k)
+      =
+        ∑ m : FusionCategory.Idx (k := k) (C := C),
+          S j m *
+            ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+              S i ℓ * S j' ℓ * S (FusionCategory.dualIdx m) ℓ /
+                S FusionCategory.unitIdx ℓ := by
+          refine Finset.sum_congr rfl ?_
+          intro m hm
+          simpa [S] using congrArg (fun t : k => S j m * t) (hVerlinde i j' m)
+    _ =
+        ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+          ∑ m : FusionCategory.Idx (k := k) (C := C),
+            S j m *
+              (S i ℓ * S j' ℓ * S (FusionCategory.dualIdx m) ℓ /
+                S FusionCategory.unitIdx ℓ) := by
+          calc
+            ∑ m : FusionCategory.Idx (k := k) (C := C),
+                S j m *
+                  ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                    S i ℓ * S j' ℓ * S (FusionCategory.dualIdx m) ℓ /
+                      S FusionCategory.unitIdx ℓ
+              =
+                ∑ m : FusionCategory.Idx (k := k) (C := C),
+                  ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                    S j m *
+                      (S i ℓ * S j' ℓ * S (FusionCategory.dualIdx m) ℓ /
+                        S FusionCategory.unitIdx ℓ) := by
+                    refine Finset.sum_congr rfl ?_
+                    intro m hm
+                    rw [Finset.mul_sum]
+            _ =
+                ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+                  ∑ m : FusionCategory.Idx (k := k) (C := C),
+                    S j m *
+                      (S i ℓ * S j' ℓ * S (FusionCategory.dualIdx m) ℓ /
+                        S FusionCategory.unitIdx ℓ) := by
+                    rw [Finset.sum_comm]
+    _ =
+        ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+          (S i ℓ * S j' ℓ / S FusionCategory.unitIdx ℓ) *
+            ∑ m : FusionCategory.Idx (k := k) (C := C),
+              S j m * S (FusionCategory.dualIdx m) ℓ := by
+          refine Finset.sum_congr rfl ?_
+          intro ℓ hℓ
+          let c : k := S i ℓ * S j' ℓ / S FusionCategory.unitIdx ℓ
+          calc
+            ∑ m : FusionCategory.Idx (k := k) (C := C),
+                S j m *
+                  (S i ℓ * S j' ℓ * S (FusionCategory.dualIdx m) ℓ /
+                    S FusionCategory.unitIdx ℓ)
+              =
+                ∑ m : FusionCategory.Idx (k := k) (C := C),
+                  c * (S j m * S (FusionCategory.dualIdx m) ℓ) := by
+                    refine Finset.sum_congr rfl ?_
+                    intro m hm
+                    simp [c, div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm]
+            _ = c *
+                ∑ m : FusionCategory.Idx (k := k) (C := C),
+                  S j m * S (FusionCategory.dualIdx m) ℓ := by
+                    symm
+                    simpa using
+                      (Finset.mul_sum
+                        (s := Finset.univ)
+                        (a := c)
+                        (f := fun m : FusionCategory.Idx (k := k) (C := C) =>
+                          S j m * S (FusionCategory.dualIdx m) ℓ))
+            _ = (S i ℓ * S j' ℓ / S FusionCategory.unitIdx ℓ) *
+                ∑ m : FusionCategory.Idx (k := k) (C := C),
+                  S j m * S (FusionCategory.dualIdx m) ℓ := by
+                    simp [c]
+    _ =
+        ∑ ℓ : FusionCategory.Idx (k := k) (C := C),
+          (S i ℓ * S j' ℓ / S FusionCategory.unitIdx ℓ) *
+            (if j = ℓ then (1 : k) else 0) := by
+          refine Finset.sum_congr rfl ?_
+          intro ℓ hℓ
+          rw [hOrth j ℓ]
+    _ = S i j * S j' j / S FusionCategory.unitIdx j := by
+          rw [Finset.sum_eq_single j]
+          · simp
+          · intro ℓ hℓ hne
+            have hne' : j ≠ ℓ := by
+              intro h
+              exact hne h.symm
+            simp [hne']
+          · intro hj
+            exact (hj (Finset.mem_univ j)).elim
+    _ = (S i j / S FusionCategory.unitIdx j) * S j j' := by
+          have hsym : S j' j = S j j' := by
+            simpa [S] using (SMatrix.sMatrix_symmetric (C := C) j' j)
+          simp [hsym, div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm]
 
 /-- The dimension of the TQFT vector space associated to a genus-g surface Σ_g:
 

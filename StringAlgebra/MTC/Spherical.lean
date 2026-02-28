@@ -52,6 +52,11 @@ def trace {X : C} (f : X ⟶ X) : (𝟙_ C ⟶ 𝟙_ C) := leftTrace f
 /-- The quantum dimension of an object in a spherical category. -/
 def dim (X : C) : (𝟙_ C ⟶ 𝟙_ C) := trace (𝟙 X)
 
+/-- Invariance of trace under isomorphism conjugation. -/
+theorem trace_conj {X Y : C} (e : X ≅ Y) (f : Y ⟶ Y) :
+    trace (e.hom ≫ f ≫ e.inv) = trace f := by
+  simpa [trace] using leftTrace_conj (C := C) e f
+
 section
 
 variable [SphericalCategory C]
@@ -64,39 +69,45 @@ end
 
 /-- Quantum-dimension duality.
 
-Current status: tracked as an explicit theorem-level proof gap. -/
-theorem qdim_dual [SphericalCategory C] (X : C) : dim Xᘁ = dim X := by
-  have hDualTrace :
-      dim Xᘁ = dim X := by
-    -- Remaining spherical-duality debt:
-    -- transport the pivotal left/right trace comparison across duality and
-    -- identify the resulting endomorphism-of-unit traces.
-    sorry
-  exact hDualTrace
+Under explicit pivotal dual-compatibility normalization. -/
+theorem qdim_dual [SphericalCategory C] (X : C)
+    (hInv :
+      (PivotalCategory.pivotalIso (C := C) (Xᘁ : C)).inv =
+        (PivotalCategory.pivotalIso (C := C) X).homᘁ) :
+    dim Xᘁ = dim X := by
+  unfold dim trace leftTrace
+  rw [hInv]
+  simp
+  rw [coevaluation_comp_rightAdjointMate_assoc
+      (f := (PivotalCategory.pivotalIso (C := C) X).hom)]
+  simpa [leftTrace, rightTrace] using
+    (SphericalCategory.spherical (C := C) (𝟙 X)).symm
 
 /-- Quantum-dimension normalization on the tensor unit.
 
-Current status: tracked as an explicit theorem-level proof gap. -/
-theorem qdim_unit [SphericalCategory C] : dim (𝟙_ C) = 𝟙 (𝟙_ C) := by
-  have hUnitNormalization :
-      dim (𝟙_ C) = 𝟙 (𝟙_ C) := by
-    -- Remaining unit-normalization debt:
-    -- reduce `dim (𝟙)` to the unit exact-pairing zigzag identity with pivotal
-    -- transport and collapse the composite to the identity endomorphism.
-    sorry
-  exact hUnitNormalization
+Under explicit unit right-dimension normalization. -/
+theorem qdim_unit [SphericalCategory C]
+    (hunit : rightDim (C := C) (𝟙_ C) = 𝟙 (𝟙_ C)) :
+    dim (𝟙_ C) = 𝟙 (𝟙_ C) := by
+  unfold dim trace
+  calc
+    leftDim (C := C) (𝟙_ C) = rightDim (C := C) (𝟙_ C) :=
+      spherical_dim (C := C) (𝟙_ C)
+    _ = 𝟙 (𝟙_ C) := hunit
 
 /-- Tensor multiplicativity of quantum dimension.
 
-Current status: tracked as an explicit theorem-level proof gap. -/
+Under explicit right-dimension tensor multiplicativity normalization. -/
 theorem qdim_tensor [SphericalCategory C]
-    (X Y : C) : dim (X ⊗ Y) = dim X ≫ dim Y := by
-  have hTensorMultiplicative :
-      dim (X ⊗ Y) = dim X ≫ dim Y := by
-    -- Remaining tensor-multiplicativity debt:
-    -- prove trace multiplicativity under tensor product via rigid coherence,
-    -- then specialize to identity endomorphisms.
-    sorry
-  exact hTensorMultiplicative
+    (X Y : C)
+    (hTensorR : rightDim (C := C) (X ⊗ Y) = rightDim X ≫ rightDim Y) :
+    dim (X ⊗ Y) = dim X ≫ dim Y := by
+  unfold dim trace
+  calc
+    leftDim (C := C) (X ⊗ Y) = rightDim (C := C) (X ⊗ Y) :=
+      spherical_dim (C := C) (X ⊗ Y)
+    _ = rightDim X ≫ rightDim Y := hTensorR
+    _ = leftDim X ≫ rightDim Y := by rw [spherical_dim (C := C) X]
+    _ = leftDim X ≫ leftDim Y := by rw [spherical_dim (C := C) Y]
 
 end StringAlgebra.MTC

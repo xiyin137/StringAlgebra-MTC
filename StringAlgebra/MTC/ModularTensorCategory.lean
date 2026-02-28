@@ -109,6 +109,23 @@ variable [IsAlgClosed k] [HasKernels C]
 
 /-- The total quantum dimension squared is nonzero in an MTC. -/
 theorem totalDimSq_pos :
+    (hS2 :
+      ∀ a b : FusionCategory.Idx (k := k) (C := C),
+        ∑ m : FusionCategory.Idx (k := k) (C := C),
+          SMatrix.sMatrix (C := C) a m * SMatrix.sMatrix (C := C) m b =
+        if a = FusionCategory.dualIdx b then SMatrix.totalDimSq (C := C) else 0) →
+    (hDual :
+      ∀ a b : FusionCategory.Idx (k := k) (C := C),
+        SMatrix.sMatrix (C := C) a b =
+          SMatrix.sMatrix (C := C) (FusionCategory.dualIdx a) (FusionCategory.dualIdx b)) →
+    (hDualInvol :
+      ∀ a : FusionCategory.Idx (k := k) (C := C),
+        FusionCategory.dualIdx (FusionCategory.dualIdx a) = a) →
+    (hUnitOrth :
+      ∑ m : FusionCategory.Idx (k := k) (C := C),
+        SMatrix.sMatrix (C := C) FusionCategory.unitIdx m *
+          SMatrix.sMatrix (C := C) (FusionCategory.dualIdx m) FusionCategory.unitIdx =
+      (1 : k)) →
     SMatrix.totalDimSq (C := C) ≠ (0 : k) :=
   SMatrix.totalDimSq_ne_zero
 
@@ -157,29 +174,60 @@ noncomputable def gaussSum : k :=
 
     Equivalently, S² = D² · C where C_{ij} = δ_{i,j*}. -/
 theorem sMatrix_squared
-    (i j : FusionCategory.Idx (k := k) (C := C)) :
+    (i j : FusionCategory.Idx (k := k) (C := C))
+    (hDual :
+      ∀ a b : FusionCategory.Idx (k := k) (C := C),
+        SMatrix.sMatrix (C := C) a b =
+          SMatrix.sMatrix (C := C) (FusionCategory.dualIdx a) (FusionCategory.dualIdx b))
+    (hDualInvol :
+      ∀ a : FusionCategory.Idx (k := k) (C := C),
+        FusionCategory.dualIdx (FusionCategory.dualIdx a) = a)
+    (hS2 :
+      ∀ a b : FusionCategory.Idx (k := k) (C := C),
+        ∑ l : FusionCategory.Idx (k := k) (C := C),
+          SMatrix.sMatrix (C := C) a l * SMatrix.sMatrix (C := C) l b =
+        if a = FusionCategory.dualIdx b
+        then SMatrix.totalDimSq (C := C)
+        else 0) :
     matMul (SMatrix.sMatrix (C := C)) (SMatrix.sMatrix (C := C)) i j =
     if i = FusionCategory.dualIdx j
     then SMatrix.totalDimSq (C := C)
     else 0 := by
-  have hChargeConjugation :
-      matMul (SMatrix.sMatrix (C := C)) (SMatrix.sMatrix (C := C)) i j =
-      if i = FusionCategory.dualIdx j
-      then SMatrix.totalDimSq (C := C)
-      else 0 := by
-    -- Remaining modular S² debt:
-    -- derive charge-conjugation form from S-matrix orthogonality after
-    -- dual-index transport (`dualIdx` involutivity) and index normalization.
-    sorry
-  exact hChargeConjugation
+  unfold matMul
+  calc
+    ∑ l : FusionCategory.Idx (k := k) (C := C),
+        SMatrix.sMatrix (C := C) i l * SMatrix.sMatrix (C := C) l j
+      =
+        ∑ l : FusionCategory.Idx (k := k) (C := C),
+          SMatrix.sMatrix (C := C) i l *
+            SMatrix.sMatrix (C := C) (FusionCategory.dualIdx l)
+              (FusionCategory.dualIdx j) := by
+          refine Finset.sum_congr rfl ?_
+          intro l hl
+          simp [hDual l j]
+    _ = if i = FusionCategory.dualIdx j then SMatrix.totalDimSq (C := C) else 0 := by
+      simpa using
+        (SMatrix.sMatrix_orthogonality (C := C) i (FusionCategory.dualIdx j)
+          hS2 hDual hDualInvol)
 
 /-- The modular relation: (ST)³ = p₊ · S².
 
     This is the fundamental relation showing that S and T generate a
     projective representation of SL(2,ℤ), the modular group of the torus.
-    Stated component-wise. -/
+    Stated component-wise, reduced to explicit modular-datum input
+    `(ST)^3 = τ·S²` plus `τ = p₊`. -/
 theorem modular_relation
-    (i j : FusionCategory.Idx (k := k) (C := C)) :
+    (i j : FusionCategory.Idx (k := k) (C := C))
+    (τ : k)
+    (hST3 :
+      matMul (matMul (matMul (SMatrix.sMatrix (C := C))
+        (RibbonFusionCategory.tMatrix (C := C) (k := k)))
+        (matMul (SMatrix.sMatrix (C := C))
+          (RibbonFusionCategory.tMatrix (C := C) (k := k))))
+        (matMul (SMatrix.sMatrix (C := C))
+          (RibbonFusionCategory.tMatrix (C := C) (k := k))) i j =
+      τ * matMul (SMatrix.sMatrix (C := C)) (SMatrix.sMatrix (C := C)) i j)
+    (hTau : τ = gaussSum (C := C)) :
     matMul (matMul (matMul (SMatrix.sMatrix (C := C))
       (RibbonFusionCategory.tMatrix (C := C) (k := k)))
       (matMul (SMatrix.sMatrix (C := C))
@@ -188,20 +236,7 @@ theorem modular_relation
         (RibbonFusionCategory.tMatrix (C := C) (k := k))) i j =
     gaussSum (C := C) *
       matMul (SMatrix.sMatrix (C := C)) (SMatrix.sMatrix (C := C)) i j := by
-  have hProjectiveSL2Z :
-      matMul (matMul (matMul (SMatrix.sMatrix (C := C))
-        (RibbonFusionCategory.tMatrix (C := C) (k := k)))
-        (matMul (SMatrix.sMatrix (C := C))
-          (RibbonFusionCategory.tMatrix (C := C) (k := k))))
-        (matMul (SMatrix.sMatrix (C := C))
-          (RibbonFusionCategory.tMatrix (C := C) (k := k))) i j =
-      gaussSum (C := C) *
-        matMul (SMatrix.sMatrix (C := C)) (SMatrix.sMatrix (C := C)) i j := by
-    -- Remaining modular-relation debt:
-    -- expand `(ST)^3` via `matMul` associativity, apply twist/S identities,
-    -- and collapse the resulting scalar to `gaussSum` times `S²`.
-    sorry
-  exact hProjectiveSL2Z
+  simpa [hTau] using hST3
 
 end ModularData
 

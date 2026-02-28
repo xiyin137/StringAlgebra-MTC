@@ -1,4 +1,5 @@
 /build/
 /.lake/
 .DS_Store
-/agent.md
+/references/
+/claude_to_codex.md
