@@ -362,6 +362,71 @@ noncomputable instance toPivotalCategory : PivotalCategory C where
     -- Both sides: Xᘁ ◁ u⁻¹ ≫ θ⁻¹ ▷ X ≫ ε = θ⁻¹ ▷ _ ≫ Xᘁ ◁ u⁻¹ ≫ ε
     rw [whisker_exchange_assoc]
 
+/-- In a ribbon category, the canonical pivotal structure is spherical:
+    the left and right categorical traces agree for all endomorphisms. -/
+private theorem leftTrace_eq_rightTrace {X : C} (f : X ⟶ X) :
+    leftTrace (C := C) f = rightTrace (C := C) f := by
+  letI : PivotalCategory C := RibbonCategory.toPivotalCategory (C := C)
+  let jX : X ≅ (Xᘁ)ᘁ := PivotalCategory.pivotalIso X
+  have hjX : jX = twist X ≪≫ drinfeldIsoIso X := rfl
+  unfold leftTrace rightTrace
+  change
+    η_ Xᘁ (Xᘁ)ᘁ ≫ (Xᘁ ◁ jX.inv) ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ =
+      η_ X Xᘁ ≫ (f ▷ Xᘁ) ≫ (jX.hom ▷ Xᘁ) ≫ ε_ Xᘁ (Xᘁ)ᘁ
+  rw [hjX]
+  rw [Iso.trans_inv, Iso.trans_hom, whiskerLeft_comp, comp_whiskerRight]
+  simp only [Category.assoc]
+  calc
+    η_ Xᘁ (Xᘁ)ᘁ ≫ (Xᘁ ◁ (drinfeldIsoIso X).inv) ≫ (Xᘁ ◁ (twist X).inv) ≫
+        (Xᘁ ◁ f) ≫ ε_ X Xᘁ
+      = η_ X Xᘁ ≫ (β_ Xᘁ X).inv ≫ (Xᘁ ◁ (twist X).inv) ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ := by
+          simpa [Category.assoc] using
+            congrArg
+              (fun t => t ≫ (Xᘁ ◁ (twist X).inv) ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ)
+              (drinfeldIsoIso_coeval (C := C) X)
+    _ = η_ X Xᘁ ≫ ((twist X).hom ≫ (twist X).hom) ▷ Xᘁ ≫
+          (β_ X Xᘁ).hom ≫ (β_ Xᘁ X).hom ≫ (β_ Xᘁ X).inv ≫
+          (Xᘁ ◁ (twist X).inv) ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ := by
+          simpa [Category.assoc] using
+            congrArg
+              (fun t => t ≫ (β_ Xᘁ X).inv ≫ (Xᘁ ◁ (twist X).inv) ≫
+                (Xᘁ ◁ f) ≫ ε_ X Xᘁ)
+              (coeval_twist_sq_monodromy (C := C) X).symm
+    _ = η_ X Xᘁ ≫ ((twist X).hom ≫ (twist X).hom) ▷ Xᘁ ≫
+          (β_ X Xᘁ).hom ≫ (Xᘁ ◁ (twist X).inv) ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ := by
+          simp
+    _ = η_ X Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫
+          (β_ X Xᘁ).hom ≫ (Xᘁ ◁ (twist X).inv) ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ := by
+          simp [comp_whiskerRight, Category.assoc]
+    _ = η_ X Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫
+          (Xᘁ ◁ (twist X).hom) ≫ (Xᘁ ◁ (twist X).inv) ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ := by
+          simpa using
+            congrArg
+              (fun t => η_ X Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫ t ≫
+                (Xᘁ ◁ (twist X).inv) ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ)
+              (BraidedCategory.braiding_naturality_left
+                (f := (twist X).hom) (Y := Xᘁ))
+    _ = η_ X Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ (Xᘁ ◁ f) ≫ ε_ X Xᘁ := by
+          simp
+    _ = η_ X Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫ f ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ ε_ X Xᘁ := by
+          simpa using
+            congrArg
+              (fun t => η_ X Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫ t ≫ ε_ X Xᘁ)
+              (BraidedCategory.braiding_naturality_left (f := f) (Y := Xᘁ)).symm
+    _ = η_ X Xᘁ ≫ ((twist X).hom ≫ f) ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ ε_ X Xᘁ := by
+          rw [← comp_whiskerRight_assoc]
+    _ = η_ X Xᘁ ≫ (f ≫ (twist X).hom) ▷ Xᘁ ≫ (β_ X Xᘁ).hom ≫ ε_ X Xᘁ := by
+          rw [twist_naturality]
+    _ = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫
+          (β_ X Xᘁ).hom ≫ ε_ X Xᘁ := by
+          rw [comp_whiskerRight, Category.assoc]
+    _ = η_ X Xᘁ ≫ f ▷ Xᘁ ≫ (twist X).hom ▷ Xᘁ ≫
+          (drinfeldIsoIso X).hom ▷ Xᘁ ≫ ε_ Xᘁ (Xᘁ)ᘁ := by
+          rw [drinfeldIsoIso_eval]
+
+noncomputable instance toSphericalCategory : SphericalCategory C where
+  spherical f := leftTrace_eq_rightTrace (C := C) f
+
 /-- The monodromy (double braiding) of X with Y:
     c_{Y,X} ∘ c_{X,Y} : X ⊗ Y → X ⊗ Y -/
 def monodromy (X Y : C) : X ⊗ Y ⟶ X ⊗ Y :=
