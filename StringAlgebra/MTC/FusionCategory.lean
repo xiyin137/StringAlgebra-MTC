@@ -88,6 +88,18 @@ class FusionCategory (k : Type u₁) [Field k]
         ∑ q : Idx,
           Module.finrank k (A ⟶ simpleObj q) *
             Module.finrank k (simpleObj i ⊗ simpleObj q ⟶ simpleObj m)
+  /-- Semisimple Hom-dimension symmetry: the multiplicity of a simple
+      in the Hom-from and Hom-to directions agree.
+
+      This is a standard consequence of semisimplicity (the non-degenerate
+      trace pairing identifies `Hom(S_i, X)` and `Hom(X, S_i)` as vector
+      spaces of equal dimension). The current `FusionCategory` axioms do
+      not include a full semisimple decomposition for arbitrary objects, so
+      this is included as a structural axiom at the class level. -/
+  simpleHomSymm :
+    ∀ (a : Idx) (X : C),
+      Module.finrank k (simpleObj a ⟶ X) =
+        Module.finrank k (X ⟶ simpleObj a)
 
 -- Explicit instances to help typeclass resolution
 noncomputable instance instFintypeFusionIdx {k : Type u₁} [Field k]
@@ -459,14 +471,11 @@ theorem fusionCoeff_assoc
 
 /-- Frobenius reciprocity for fusion coefficients.
 
-Closed under explicit simple-Hom symmetry transport and linear adjunction. -/
+Uses the `simpleHomSymm` class field (semisimple Hom-dimension symmetry)
+and the linear right adjunction. -/
 theorem fusionCoeff_frobenius
     [CategoryTheory.MonoidalLinear k C]
-    (i j m : Idx (k := k) (C := C))
-    (hSimpleHomSymm :
-      ∀ (a : Idx (k := k) (C := C)) (X : C),
-        Module.finrank k (simpleObj (k := k) (C := C) a ⟶ X) =
-          Module.finrank k (X ⟶ simpleObj (k := k) (C := C) a)) :
+    (i j m : Idx (k := k) (C := C)) :
     fusionCoeff (k := k) i j m = fusionCoeff m (dualIdx j) i := by
   calc
     fusionCoeff (k := k) i j m =
@@ -481,29 +490,25 @@ theorem fusionCoeff_frobenius
           (simpleObj (k := k) (C := C) m ⊗
               simpleObj (k := k) (C := C) (dualIdx j) ⟶
             simpleObj (k := k) (C := C) i) := by
-      exact hSimpleHomSymm i
+      exact simpleHomSymm i
         (simpleObj (k := k) (C := C) m ⊗
           simpleObj (k := k) (C := C) (dualIdx j))
     _ = fusionCoeff (k := k) m (dualIdx j) i := by
       rfl
 
 /-- Dual-on-left vacuum multiplicity from Frobenius reciprocity:
-`N^{0}_{i*,i} = 1` under the explicit simple-Hom symmetry transport. -/
+`N^{0}_{i*,i} = 1`. -/
 theorem fusionCoeff_dual_left_vacuum_eq
     [CategoryTheory.MonoidalLinear k C]
     [IsAlgClosed k] [HasKernels C]
-    (i : Idx (k := k) (C := C))
-    (hSimpleHomSymm :
-      ∀ (a : Idx (k := k) (C := C)) (X : C),
-        Module.finrank k (simpleObj (k := k) (C := C) a ⟶ X) =
-          Module.finrank k (X ⟶ simpleObj (k := k) (C := C) a)) :
+    (i : Idx (k := k) (C := C)) :
     fusionCoeff (k := k) (dualIdx i) i unitIdx = 1 := by
   calc
     fusionCoeff (k := k) (dualIdx i) i unitIdx
         = fusionCoeff (k := k) unitIdx (dualIdx i) (dualIdx i) := by
             simpa using
               (fusionCoeff_frobenius (k := k) (C := C)
-                (dualIdx i) i unitIdx hSimpleHomSymm)
+                (dualIdx i) i unitIdx)
     _ = 1 := fusionCoeff_vacuum_eq (k := k) (C := C) (dualIdx i)
 
 /-- Dual-on-right vacuum multiplicity from Frobenius reciprocity:
@@ -512,10 +517,6 @@ theorem fusionCoeff_dual_right_vacuum_eq
     [CategoryTheory.MonoidalLinear k C]
     [IsAlgClosed k] [HasKernels C]
     (i : Idx (k := k) (C := C))
-    (hSimpleHomSymm :
-      ∀ (a : Idx (k := k) (C := C)) (X : C),
-        Module.finrank k (simpleObj (k := k) (C := C) a ⟶ X) =
-          Module.finrank k (X ⟶ simpleObj (k := k) (C := C) a))
     (hDualInvol : dualIdx (dualIdx i) = i) :
     fusionCoeff (k := k) i (dualIdx i) unitIdx = 1 := by
   calc
@@ -523,7 +524,7 @@ theorem fusionCoeff_dual_right_vacuum_eq
         = fusionCoeff (k := k) unitIdx (dualIdx (dualIdx i)) i := by
             simpa using
               (fusionCoeff_frobenius (k := k) (C := C)
-                i (dualIdx i) unitIdx hSimpleHomSymm)
+                i (dualIdx i) unitIdx)
     _ = fusionCoeff (k := k) unitIdx i i := by simp [hDualInvol]
     _ = 1 := fusionCoeff_vacuum_eq (k := k) (C := C) i
 
@@ -533,11 +534,7 @@ Derivation route: Frobenius reciprocity + braided commutativity. -/
 theorem fusionCoeff_dual_swap
     [BraidedCategory C]
     [CategoryTheory.MonoidalLinear k C]
-    (i j m : Idx (k := k) (C := C))
-    (hSimpleHomSymm :
-      ∀ (a : Idx (k := k) (C := C)) (X : C),
-        Module.finrank k (simpleObj (k := k) (C := C) a ⟶ X) =
-          Module.finrank k (X ⟶ simpleObj (k := k) (C := C) a)) :
+    (i j m : Idx (k := k) (C := C)) :
     fusionCoeff (k := k) i j m = fusionCoeff (dualIdx j) (dualIdx i) (dualIdx m) := by
   have hComm (a b c : Idx (k := k) (C := C)) :
       fusionCoeff (k := k) a b c = fusionCoeff (k := k) b a c := by
@@ -549,17 +546,17 @@ theorem fusionCoeff_dual_swap
   calc
     fusionCoeff (k := k) i j m = fusionCoeff (k := k) m (dualIdx j) i := by
       simpa using
-        (fusionCoeff_frobenius (k := k) (C := C) i j m hSimpleHomSymm)
+        (fusionCoeff_frobenius (k := k) (C := C) i j m)
     _ = fusionCoeff (k := k) (dualIdx j) m i := by
       simpa using hComm m (dualIdx j) i
     _ = fusionCoeff (k := k) i (dualIdx m) (dualIdx j) := by
       simpa using
-        (fusionCoeff_frobenius (k := k) (C := C) (dualIdx j) m i hSimpleHomSymm)
+        (fusionCoeff_frobenius (k := k) (C := C) (dualIdx j) m i)
     _ = fusionCoeff (k := k) (dualIdx m) i (dualIdx j) := by
       simpa using hComm i (dualIdx m) (dualIdx j)
     _ = fusionCoeff (k := k) (dualIdx j) (dualIdx i) (dualIdx m) := by
       simpa using
-        (fusionCoeff_frobenius (k := k) (C := C) (dualIdx m) i (dualIdx j) hSimpleHomSymm)
+        (fusionCoeff_frobenius (k := k) (C := C) (dualIdx m) i (dualIdx j))
 
 end FusionCategory
 

@@ -67,16 +67,11 @@ theorem spherical_dim (X : C) : leftDim X = rightDim X :=
 
 end
 
-/-- Quantum-dimension duality.
-
-Under explicit pivotal dual-compatibility normalization. -/
-theorem qdim_dual [SphericalCategory C] (X : C)
-    (hInv :
-      (PivotalCategory.pivotalIso (C := C) (Xᘁ : C)).inv =
-        (PivotalCategory.pivotalIso (C := C) X).homᘁ) :
+/-- Quantum-dimension duality: dim(X*) = dim(X) in a spherical category. -/
+theorem qdim_dual [SphericalCategory C] (X : C) :
     dim Xᘁ = dim X := by
   unfold dim trace leftTrace
-  rw [hInv]
+  rw [PivotalCategory.pivotalIso_dual_compatibility_inv]
   simp
   rw [coevaluation_comp_rightAdjointMate_assoc
       (f := (PivotalCategory.pivotalIso (C := C) X).hom)]

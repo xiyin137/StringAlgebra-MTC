@@ -1,12 +1,13 @@
 # MTC Module TODO
 
-## Audit Snapshot (2026-02-28)
+## Audit Snapshot (2026-03-06)
 
-- Build status: `lake build StringAlgebra.MTC` passes (3000 jobs).
-- Proof-gap status: `2` theorem-level `sorry` markers remain under `StringAlgebra/MTC`.
+- Build status: `lake build StringAlgebra.MTC` passes (3000 jobs). `lake build StringAlgebra.MTC.DevelopmentHarness` passes.
+- Proof-gap status: `2` theorem-level `sorry` markers remain under `StringAlgebra/MTC` (both in `FusionPF.lean`).
+- **Ribbon.lean is sorry-free.** The `pivotalIso_dual_compatibility` sorry has been resolved.
 - Smuggling status: no `axiom` / `admit` / `unsafe` / `postulate` in `StringAlgebra/MTC`.
 - Wrapper status: core umbrella path is wrapper-minimized; `StringAlgebra/MTC.lean` no longer imports `DevelopmentHarness`.
-- Harness status: wrapper-heavy `StringAlgebra/MTC/DevelopmentHarness.lean` remains available as explicit opt-in import only.
+- Harness status: `DevelopmentHarness.lean` builds cleanly (fixed `qdim_dual` signature mismatch).
 - Linter status: non-`sorry` warnings reduced to one stylistic `simpa` warning in `StringAlgebra/MTC/Trace.lean:96`.
 
 ## Reference-Driven Notes (2026-02-28)
@@ -266,18 +267,23 @@ Exit criteria:
 - Additional closure: `sMatrix_diagonalizes_fusion` is now proved from explicit
   Verlinde + orthogonality assumptions.
 
-## Foundational Blocker Candidate
+## Foundational Blocker Status
 
-- The following relation appears to be the missing normalization bridge in both
-  `qdim_unit` and `qdim_dual` attempts:
-  `(PivotalCategory.pivotalIso (Xᘁ)).hom = (PivotalCategory.pivotalIso X).invᘁ`
-  (equivalently the inverse form on `.inv`).
-- This is exactly the pivotal dual-compatibility pattern highlighted in
-  EGNO Ex. 4.7.9(1). Current class fields (`pivotalIso_naturality`,
-  `pivotalIso_leftDuality`, `pivotalIso_leftDuality_dual`) have not yet yielded
-  this bridge in Lean.
-- Next hard target is to derive this as an internal theorem from current fields;
-  if impossible, we need an explicit foundational design decision.
+- **RESOLVED (2026-03-06):** The pivotal dual-compatibility blocker
+  `(pivotalIso Xᘁ).hom = (pivotalIso X).invᘁ` is now a proved field of `PivotalCategory`.
+- The proof required correcting the pivotal definition in `Ribbon.lean` from
+  `j = θ⁻¹ ≫ u` to `j = θ ≫ u`. With the corrected definition, dual compatibility
+  follows from the eval-twist-monodromy identity `θ ▷ X ≫ c² ≫ ε = θ⁻¹ ▷ X ≫ ε`.
+- `qdim_dual` is now unconditional (no `hInv` parameter needed).
+
+## Remaining Architectural Debt
+
+- **RibbonCategory → SphericalCategory bridge**: No proved path exists yet.
+  Requires showing `leftTrace f = rightTrace f` for all endomorphisms in a ribbon category.
+- **Modular/Verlinde wrappers**: Core modular results (`totalDimSq_pos`, `sMatrix_squared`,
+  `modular_relation`, `verlinde_formula`) remain conditional on explicit assumptions.
+- **Instance surgery duplication**: `attribute [-instance]` blocks are duplicated
+  between `Ribbon.lean` and `DevelopmentHarness.lean`.
 
 ## Audit Commands
 

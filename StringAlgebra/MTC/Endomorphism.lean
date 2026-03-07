@@ -129,6 +129,22 @@ theorem scalarOfEndo_id {X : C} [Simple X]
   | inl h => exact hne (sub_eq_zero.mp h)
   | inr h => exact id_nonzero X h
 
+/-- Scalar extraction is invariant under conjugation by an isomorphism. -/
+theorem scalarOfEndo_conj {X Y : C} [Simple X] [Simple Y]
+    [FiniteDimensional k (X ⟶ X)] [FiniteDimensional k (Y ⟶ Y)]
+    (e : X ≅ Y) (f : X ⟶ X) :
+    scalarOfEndo (k := k) (X := Y) (e.inv ≫ f ≫ e.hom) =
+      scalarOfEndo (k := k) (X := X) f := by
+  apply (smulIdLinearMap_injective (k := k) (X := Y))
+  calc
+    scalarOfEndo (k := k) (X := Y) (e.inv ≫ f ≫ e.hom) • 𝟙 Y =
+        e.inv ≫ f ≫ e.hom :=
+      scalarOfEndo_spec (k := k) (X := Y) (e.inv ≫ f ≫ e.hom)
+    _ = e.inv ≫ (scalarOfEndo (k := k) (X := X) f • 𝟙 X) ≫ e.hom := by
+      rw [scalarOfEndo_spec (k := k) (X := X) f]
+    _ = scalarOfEndo (k := k) (X := X) f • 𝟙 Y := by
+      simp
+
 end ScalarExtraction
 
 section FusionScalars

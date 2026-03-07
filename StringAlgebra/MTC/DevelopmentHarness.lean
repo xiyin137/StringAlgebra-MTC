@@ -47,12 +47,9 @@ theorem qdim_unit [SphericalCategory C]
 
 theorem qdim_dual
     [SphericalCategory C]
-    (X : C)
-    (hInv :
-      (PivotalCategory.pivotalIso (C := C) (Xᘁ : C)).inv =
-        (PivotalCategory.pivotalIso (C := C) X).homᘁ) :
+    (X : C) :
     dim (C := C) Xᘁ = dim X :=
-  StringAlgebra.MTC.qdim_dual (C := C) X hInv
+  StringAlgebra.MTC.qdim_dual (C := C) X
 
 theorem qdim_tensor
     [SphericalCategory C]
@@ -70,27 +67,17 @@ theorem fusion_assoc
 theorem fusion_frobenius
     [CategoryTheory.MonoidalLinear k C]
     (i j m : FusionCategory.Idx (k := k) (C := C)) :
-    (hSimpleHomSymm :
-      ∀ (a : FusionCategory.Idx (k := k) (C := C)) (X : C),
-        Module.finrank k (FusionCategory.simpleObj (k := k) (C := C) a ⟶ X) =
-          Module.finrank k (X ⟶ FusionCategory.simpleObj (k := k) (C := C) a)) →
     FusionCategory.fusionCoeff (k := k) i j m =
-      FusionCategory.fusionCoeff m (FusionCategory.dualIdx j) i := by
-  intro hSimpleHomSymm
-  exact FusionCategory.fusionCoeff_frobenius (k := k) (C := C) i j m hSimpleHomSymm
+      FusionCategory.fusionCoeff m (FusionCategory.dualIdx j) i :=
+  FusionCategory.fusionCoeff_frobenius (k := k) (C := C) i j m
 
 theorem fusion_dual_swap
     [CategoryTheory.MonoidalLinear k C]
     (i j m : FusionCategory.Idx (k := k) (C := C)) :
-    (hSimpleHomSymm :
-      ∀ (a : FusionCategory.Idx (k := k) (C := C)) (X : C),
-        Module.finrank k (FusionCategory.simpleObj (k := k) (C := C) a ⟶ X) =
-          Module.finrank k (X ⟶ FusionCategory.simpleObj (k := k) (C := C) a)) →
     FusionCategory.fusionCoeff (k := k) i j m =
       FusionCategory.fusionCoeff (FusionCategory.dualIdx j)
-        (FusionCategory.dualIdx i) (FusionCategory.dualIdx m) := by
-  intro hSimpleHomSymm
-  exact FusionCategory.fusionCoeff_dual_swap (k := k) (C := C) i j m hSimpleHomSymm
+        (FusionCategory.dualIdx i) (FusionCategory.dualIdx m) :=
+  FusionCategory.fusionCoeff_dual_swap (k := k) (C := C) i j m
 
 theorem fusion_matrix_assoc
     (i j : FusionCategory.Idx (k := k) (C := C)) :

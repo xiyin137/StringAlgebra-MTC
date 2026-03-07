@@ -67,6 +67,59 @@ variable [IsAlgClosed k] [HasKernels C]
 noncomputable def twistValue (i : FusionCategory.Idx (k := k) (C := C)) : k :=
   scalarOfEndSimple i (RibbonCategory.twist (FusionCategory.simpleObj i)).hom
 
+/-- Twist eigenvalues are invariant under isomorphic transport of simples. -/
+theorem twistValue_iso
+    (i j : FusionCategory.Idx (k := k) (C := C))
+    (e : FusionCategory.simpleObj (k := k) (C := C) i ≅
+      FusionCategory.simpleObj (k := k) (C := C) j) :
+    twistValue (C := C) (k := k) j = twistValue (C := C) (k := k) i := by
+  have htwist :
+      (RibbonCategory.twist (FusionCategory.simpleObj (k := k) (C := C) j)).hom =
+        e.inv ≫
+          (RibbonCategory.twist (FusionCategory.simpleObj (k := k) (C := C) i)).hom ≫
+          e.hom := by
+    have hnat := RibbonCategory.twist_naturality (C := C) (f := e.hom)
+    have hnat' := congrArg (fun t => e.inv ≫ t) hnat
+    simpa [Category.assoc] using hnat'
+  haveI : Simple (FusionCategory.simpleObj (k := k) (C := C) i) :=
+    FusionCategory.simpleObj_simple (k := k) (C := C) i
+  haveI : Simple (FusionCategory.simpleObj (k := k) (C := C) j) :=
+    FusionCategory.simpleObj_simple (k := k) (C := C) j
+  haveI : FiniteDimensional k
+      (FusionCategory.simpleObj (k := k) (C := C) i ⟶
+        FusionCategory.simpleObj (k := k) (C := C) i) :=
+    FusionCategory.finiteDimensionalHom (k := k) (C := C)
+      (FusionCategory.simpleObj (k := k) (C := C) i)
+      (FusionCategory.simpleObj (k := k) (C := C) i)
+  haveI : FiniteDimensional k
+      (FusionCategory.simpleObj (k := k) (C := C) j ⟶
+        FusionCategory.simpleObj (k := k) (C := C) j) :=
+    FusionCategory.finiteDimensionalHom (k := k) (C := C)
+      (FusionCategory.simpleObj (k := k) (C := C) j)
+      (FusionCategory.simpleObj (k := k) (C := C) j)
+  calc
+    twistValue (C := C) (k := k) j =
+      scalarOfEndo (k := k)
+        (X := FusionCategory.simpleObj (k := k) (C := C) j)
+        ((RibbonCategory.twist
+          (FusionCategory.simpleObj (k := k) (C := C) j)).hom) := by
+            simp [twistValue, scalarOfEndSimple]
+    _ =
+      scalarOfEndo (k := k)
+        (X := FusionCategory.simpleObj (k := k) (C := C) i)
+        ((RibbonCategory.twist
+          (FusionCategory.simpleObj (k := k) (C := C) i)).hom) := by
+            rw [htwist]
+            simpa using
+              (scalarOfEndo_conj (k := k)
+                (X := FusionCategory.simpleObj (k := k) (C := C) i)
+                (Y := FusionCategory.simpleObj (k := k) (C := C) j)
+                e
+                ((RibbonCategory.twist
+                  (FusionCategory.simpleObj (k := k) (C := C) i)).hom))
+    _ = twistValue (C := C) (k := k) i := by
+          simp [twistValue, scalarOfEndSimple]
+
 /-- The twist eigenvalue of the vacuum is 1 (the vacuum has trivial spin). -/
 theorem twistValue_vacuum :
     twistValue (C := C) (k := k) FusionCategory.unitIdx = 1 := by
