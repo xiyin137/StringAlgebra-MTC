@@ -358,6 +358,89 @@ noncomputable def leftFusionMatrixByFin
     Matrix (Fin (rank (k := k) (C := C))) (Fin (rank (k := k) (C := C))) k :=
   leftFusionMatrixFin (k := k) (C := C) (idxOfFin (k := k) (C := C) i)
 
+@[simp] theorem leftFusionMatrixByFinNat_apply
+    (i j m : Fin (rank (k := k) (C := C))) :
+    leftFusionMatrixByFinNat (k := k) (C := C) i j m =
+      fusionCoeff (k := k)
+        (idxOfFin (k := k) (C := C) i)
+        (idxOfFin (k := k) (C := C) j)
+        (idxOfFin (k := k) (C := C) m) := rfl
+
+@[simp] theorem leftFusionMatrixByFin_apply
+    (i j m : Fin (rank (k := k) (C := C))) :
+    leftFusionMatrixByFin (k := k) (C := C) i j m =
+      (fusionCoeff (k := k)
+        (idxOfFin (k := k) (C := C) i)
+        (idxOfFin (k := k) (C := C) j)
+        (idxOfFin (k := k) (C := C) m) : k) := rfl
+
+section PositiveAggregate
+
+variable [CategoryTheory.MonoidalLinear k C]
+variable [IsAlgClosed k] [HasKernels C]
+
+/-- The aggregate left fusion matrix `A = ∑_i N_i` on the `Fin rank` basis. -/
+noncomputable def totalLeftFusionMatrixByFinNat :
+    Matrix (Fin (rank (k := k) (C := C))) (Fin (rank (k := k) (C := C))) ℕ :=
+  ∑ i : Fin (rank (k := k) (C := C)),
+    leftFusionMatrixByFinNat (k := k) (C := C) i
+
+omit [CategoryTheory.MonoidalLinear k C] [IsAlgClosed k] [HasKernels C] in
+@[simp] theorem totalLeftFusionMatrixByFinNat_apply
+    (j m : Fin (rank (k := k) (C := C))) :
+    totalLeftFusionMatrixByFinNat (k := k) (C := C) j m =
+      ∑ i : Fin (rank (k := k) (C := C)),
+        fusionCoeff (k := k)
+          (idxOfFin (k := k) (C := C) i)
+          (idxOfFin (k := k) (C := C) j)
+          (idxOfFin (k := k) (C := C) m) := by
+  simpa [totalLeftFusionMatrixByFinNat] using
+    (Matrix.sum_apply j m Finset.univ
+      (fun i : Fin (rank (k := k) (C := C)) =>
+        leftFusionMatrixByFinNat (k := k) (C := C) i))
+
+/-- Every entry of the aggregate left fusion matrix is strictly positive. -/
+theorem totalLeftFusionMatrixByFinNat_pos
+    (j m : Fin (rank (k := k) (C := C))) :
+    0 < totalLeftFusionMatrixByFinNat (k := k) (C := C) j m := by
+  rw [totalLeftFusionMatrixByFinNat_apply]
+  obtain ⟨i, hi⟩ := FusionCategory.exists_fusionCoeff_pos
+    (k := k) (C := C)
+    (idxOfFin (k := k) (C := C) j)
+    (idxOfFin (k := k) (C := C) m)
+  let iFin : Fin (rank (k := k) (C := C)) :=
+    finOfIdx (k := k) (C := C) i
+  have hterm :
+      0 <
+        fusionCoeff (k := k)
+          (idxOfFin (k := k) (C := C) iFin)
+          (idxOfFin (k := k) (C := C) j)
+          (idxOfFin (k := k) (C := C) m) := by
+    simpa [iFin] using hi
+  have hle :
+      fusionCoeff (k := k)
+          (idxOfFin (k := k) (C := C) iFin)
+          (idxOfFin (k := k) (C := C) j)
+          (idxOfFin (k := k) (C := C) m) ≤
+        ∑ a : Fin (rank (k := k) (C := C)),
+          fusionCoeff (k := k)
+            (idxOfFin (k := k) (C := C) a)
+            (idxOfFin (k := k) (C := C) j)
+            (idxOfFin (k := k) (C := C) m) := by
+    let a : Fin (rank (k := k) (C := C)) → ℕ := fun b =>
+      fusionCoeff (k := k)
+        (idxOfFin (k := k) (C := C) b)
+        (idxOfFin (k := k) (C := C) j)
+        (idxOfFin (k := k) (C := C) m)
+    have : a iFin ≤ ∑ b : Fin (rank (k := k) (C := C)), a b :=
+      Finset.single_le_sum
+        (fun b _ => Nat.zero_le _)
+        (show iFin ∈ Finset.univ by simp)
+    simpa [a] using this
+  exact lt_of_lt_of_le hterm hle
+
+end PositiveAggregate
+
 section BraidedCommutativityFin
 
 variable [BraidedCategory C]

@@ -72,10 +72,62 @@ class FinitelySemisimple (C : Type u₁) [Category.{v₁} C] [Preadditive C]
     ∃ (i : SimpleIndex), Nonempty (X ≅ simpleRepr i)
 
 variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [HasFiniteBiproducts C]
-variable [HasKernels C]
+
+namespace SemisimpleCategory
+
+variable [SemisimpleCategory C]
+
+/-- In a semisimple category, every nonzero object admits a nonzero morphism to
+some simple object. -/
+theorem exists_nonzero_to_simple_of_not_isZero (X : C) (hX : ¬ IsZero X) :
+    ∃ (S : C) (_ : Simple S) (f : X ⟶ S), f ≠ 0 := by
+  classical
+  obtain ⟨ι, _, S, hS, ⟨e⟩⟩ :=
+    SemisimpleCategory.exists_simpleDecomposition (C := C) X
+  have hproj : ∃ j : ι, e.hom ≫ biproduct.π S j ≠ 0 := by
+    by_contra h
+    push_neg at h
+    have hzero : e.hom = 0 := by
+      apply biproduct.hom_ext
+      intro j
+      rw [h j]
+      simp
+    apply hX
+    rw [IsZero.iff_id_eq_zero]
+    calc
+      𝟙 X = e.hom ≫ e.inv := by simp [e.hom_inv_id]
+      _ = 0 := by simp [hzero]
+  obtain ⟨j, hj⟩ := hproj
+  exact ⟨S j, hS j, e.hom ≫ biproduct.π S j, hj⟩
+
+/-- In a semisimple category, every nonzero object receives a nonzero morphism
+from some simple object. -/
+theorem exists_nonzero_from_simple_of_not_isZero (X : C) (hX : ¬ IsZero X) :
+    ∃ (S : C) (_ : Simple S) (f : S ⟶ X), f ≠ 0 := by
+  classical
+  obtain ⟨ι, _, S, hS, ⟨e⟩⟩ :=
+    SemisimpleCategory.exists_simpleDecomposition (C := C) X
+  have hinj : ∃ j : ι, biproduct.ι S j ≫ e.inv ≠ 0 := by
+    by_contra h
+    push_neg at h
+    have hzero : e.inv = 0 := by
+      apply biproduct.hom_ext'
+      intro j
+      rw [h j]
+      simp
+    apply hX
+    rw [IsZero.iff_id_eq_zero]
+    calc
+      𝟙 X = e.hom ≫ e.inv := by simp [e.hom_inv_id]
+      _ = 0 := by simp [hzero]
+  obtain ⟨j, hj⟩ := hinj
+  exact ⟨S j, hS j, biproduct.ι S j ≫ e.inv, hj⟩
+
+end SemisimpleCategory
 
 namespace FinitelySemisimple
 
+variable [HasKernels C]
 variable [FinitelySemisimple C]
 
 instance : Fintype (FinitelySemisimple.SimpleIndex C) :=

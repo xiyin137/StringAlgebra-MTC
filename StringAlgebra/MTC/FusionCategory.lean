@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import StringAlgebra.MTC.Semisimple
 import StringAlgebra.MTC.Pivotal
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Zero
 import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 import Mathlib.CategoryTheory.Monoidal.Linear
@@ -47,7 +48,8 @@ class FusionCategory (k : Type u₁) [Field k]
     (C : Type u₁) [Category.{v₁} C]
     [MonoidalCategory C] [Preadditive C] [Linear k C]
     [MonoidalPreadditive C]
-    [HasFiniteBiproducts C] [RigidCategory C] where
+    [HasFiniteBiproducts C] [RigidCategory C]
+    extends SemisimpleCategory C where
   /-- The finite type indexing simple isoclasses -/
   Idx : Type
   /-- The indexing type is finite -/
@@ -199,6 +201,38 @@ noncomputable def fusionCoeff (i j m : Idx (k := k) (C := C)) : ℕ :=
 theorem dual_simple (i : Idx (k := k) (C := C)) : Simple (simpleObj i)ᘁ := by
   haveI := simpleObj_simple (k := k) (C := C) (dualIdx i)
   exact Simple.of_iso (dualIdx_iso i)
+
+/-- Chosen simple representatives are nonzero objects. -/
+theorem simpleObj_not_isZero (i : Idx (k := k) (C := C)) :
+    ¬ IsZero (simpleObj (k := k) (C := C) i) := by
+  haveI := simpleObj_simple (k := k) (C := C) i
+  exact Simple.not_isZero (simpleObj (k := k) (C := C) i)
+
+/-- Every nonzero object admits a nonzero morphism to some chosen simple
+representative. -/
+theorem exists_nonzero_hom_to_simpleObj_of_not_isZero
+    (X : C) (hX : ¬ IsZero X) :
+    ∃ (i : Idx (k := k) (C := C)) (f : X ⟶ simpleObj (k := k) (C := C) i), f ≠ 0 := by
+  obtain ⟨S, hS, f, hf⟩ :=
+    SemisimpleCategory.exists_nonzero_to_simple_of_not_isZero (C := C) X hX
+  obtain ⟨i, ⟨e⟩⟩ := simpleObj_exhaustive (k := k) (C := C) S hS
+  refine ⟨i, f ≫ e.hom, ?_⟩
+  intro h
+  apply hf
+  exact zero_of_comp_mono e.hom h
+
+/-- Every nonzero object receives a nonzero morphism from some chosen simple
+representative. -/
+theorem exists_nonzero_hom_from_simpleObj_of_not_isZero
+    (X : C) (hX : ¬ IsZero X) :
+    ∃ (i : Idx (k := k) (C := C)) (f : simpleObj (k := k) (C := C) i ⟶ X), f ≠ 0 := by
+  obtain ⟨S, hS, f, hf⟩ :=
+    SemisimpleCategory.exists_nonzero_from_simple_of_not_isZero (C := C) X hX
+  obtain ⟨i, ⟨e⟩⟩ := simpleObj_exhaustive (k := k) (C := C) S hS
+  refine ⟨i, e.inv ≫ f, ?_⟩
+  intro h
+  apply hf
+  exact zero_of_epi_comp e.inv h
 
 /-- Right-adjoint Hom equivalence used in Frobenius-style rewrites:
     `Hom(Xᵢ ⊗ Xⱼ, Xₘ) ≃ Hom(Xᵢ, Xₘ ⊗ Xⱼᘁ)`. -/
@@ -527,6 +561,53 @@ theorem fusionCoeff_dual_right_vacuum_eq
                 i (dualIdx i) unitIdx)
     _ = fusionCoeff (k := k) unitIdx i i := by simp [hDualInvol]
     _ = 1 := fusionCoeff_vacuum_eq (k := k) (C := C) i
+
+/-- For every pair `(j,m)`, some simple object `X_i` appears in the product
+`X_m ⊗ X_j*`, equivalently `N^m_{ij} > 0` for some `i`. The proof uses
+fusion associativity plus the dual-vacuum identities. -/
+theorem exists_fusionCoeff_pos
+    [CategoryTheory.MonoidalLinear k C]
+    [IsAlgClosed k] [HasKernels C]
+    (j m : Idx (k := k) (C := C)) :
+    ∃ i : Idx (k := k) (C := C), 0 < fusionCoeff (k := k) i j m := by
+  have hsum_pos :
+      0 < ∑ p : Idx (k := k) (C := C),
+        fusionCoeff (k := k) m (dualIdx (k := k) (C := C) j) p *
+          fusionCoeff (k := k) p j m := by
+    rw [fusionCoeff_assoc (k := k) (C := C) m (dualIdx (k := k) (C := C) j) j m]
+    have hterm_pos :
+        0 <
+          fusionCoeff (k := k) (dualIdx (k := k) (C := C) j) j (unitIdx (k := k) (C := C)) *
+            fusionCoeff (k := k) m (unitIdx (k := k) (C := C)) m := by
+      simp [fusionCoeff_dual_left_vacuum_eq (k := k) (C := C) j,
+        fusionCoeff_right_vacuum_eq (k := k) (C := C) m]
+    have hterm_le :
+        fusionCoeff (k := k) (dualIdx (k := k) (C := C) j) j (unitIdx (k := k) (C := C)) *
+            fusionCoeff (k := k) m (unitIdx (k := k) (C := C)) m
+          ≤
+            ∑ q : Idx (k := k) (C := C),
+              fusionCoeff (k := k) (dualIdx (k := k) (C := C) j) j q *
+                fusionCoeff (k := k) m q m := by
+      let a : Idx (k := k) (C := C) → ℕ := fun q =>
+        fusionCoeff (k := k) (dualIdx (k := k) (C := C) j) j q *
+          fusionCoeff (k := k) m q m
+      have : a (unitIdx (k := k) (C := C)) ≤ ∑ q : Idx (k := k) (C := C), a q :=
+        Finset.single_le_sum
+          (fun q _ => Nat.zero_le _)
+          (show unitIdx (k := k) (C := C) ∈ Finset.univ by simp)
+      simpa [a] using this
+    exact lt_of_lt_of_le hterm_pos hterm_le
+  by_contra h
+  push_neg at h
+  have hsum_zero :
+      ∑ p : Idx (k := k) (C := C),
+        fusionCoeff (k := k) m (dualIdx (k := k) (C := C) j) p *
+          fusionCoeff (k := k) p j m = 0 := by
+    refine Finset.sum_eq_zero ?_
+    intro p hp
+    rw [Nat.mul_eq_zero]
+    exact Or.inr (Nat.eq_zero_of_le_zero (h p))
+  exact hsum_pos.ne' hsum_zero
 
 /-- Duality/swap symmetry of fusion coefficients.
 
